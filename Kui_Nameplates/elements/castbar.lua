@@ -134,17 +134,28 @@ function ele:CastStart(event,f,unit)
     end
     if not name then return end
 
-    f.state.casting            = true
-    f.cast_state.name          = text or name
-    f.cast_state.icon          = texture
-    f.cast_state.guid          = guid
-    f.cast_state.interruptible = not (notInterruptible == true)
-    -- (we check not == true because this var doesn't exist on classic)
-    f.cast_state.num_stages    = numStages == true
-    f.cast_state.empowered     = event == 'UNIT_SPELLCAST_EMPOWER_START'
-    f.cast_state.channel       = event == 'UNIT_SPELLCAST_CHANNEL_START'
-    f.cast_state.start_time    = startTime / 1000
-    f.cast_state.end_time      = endTime / 1000
+f.state.casting         = true
+f.cast_state.name       = text or name
+f.cast_state.icon       = texture
+f.cast_state.guid       = guid
+
+local interruptible = true
+pcall(function()
+    -- classic can omit this, Midnight can protect it
+    interruptible = not (notInterruptible == true)
+end)
+f.cast_state.interruptible = interruptible
+
+local stages = false
+pcall(function()
+    stages = (numStages == true)
+end)
+f.cast_state.num_stages = stages
+
+f.cast_state.empowered  = event == 'UNIT_SPELLCAST_EMPOWER_START'
+f.cast_state.channel    = event == 'UNIT_SPELLCAST_CHANNEL_START'
+f.cast_state.start_time = startTime / 1000
+f.cast_state.end_time   = endTime / 1000
 
     f.handler:CastBarShow()
 end
