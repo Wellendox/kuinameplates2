@@ -18,7 +18,19 @@ LSM:Register(LSM.MediaType.FONT,'Roboto Condensed Bold',kui.m.f.roboto,
 LSM:Register(LSM.MediaType.STATUSBAR, 'Kui status bar', kui.m.t.bar)
 LSM:Register(LSM.MediaType.STATUSBAR, 'Kui status bar (brighter)', kui.m.t.brightbar)
 LSM:Register(LSM.MediaType.STATUSBAR, 'Kui shaded bar', kui.m.t.oldbar)
+local function SafeCVarNumber(name, fallback)
+    local v = GetCVarDefault(name)
+    if v == nil then
+        v = GetCVar(name)
+    end
 
+    v = tonumber(v)
+    if v == nil then
+        return fallback
+    end
+
+    return v
+end
 local locale = GetLocale()
 local font_support = locale ~= 'zhCN' and locale ~= 'zhTW' and locale ~= 'koKR'
 
@@ -28,8 +40,8 @@ local DEFAULT_BAR = 'Kui status bar'
 -- default configuration #######################################################
 local default_config = {
     bar_texture = DEFAULT_BAR,
-    bar_animation = 3,
-    bar_spark = true, -- NEX XXX requires reload
+    bar_animation = 0,
+    bar_spark = false, -- NEX XXX requires reload
     combat_hostile = 1,
     combat_friendly = 1,
     ignore_uiscale = false,
@@ -263,15 +275,15 @@ local default_config = {
     cvar_personal_show_always = GetCVarDefault('nameplatePersonalShowAlways')=="1",
     cvar_personal_show_combat = GetCVarDefault('nameplatePersonalShowInCombat')=="1",
     cvar_personal_show_target = GetCVarDefault('nameplatePersonalShowWithTarget')=="1",
-    cvar_clamp_top = tonumber(GetCVarDefault('nameplateOtherTopInset')),
-    cvar_clamp_bottom = tonumber(GetCVarDefault('nameplateOtherBottomInset')),
-    cvar_self_clamp_top = tonumber(GetCVarDefault('nameplateSelfTopInset')),
-    cvar_self_clamp_bottom = tonumber(GetCVarDefault('nameplateSelfBottomInset')),
-    cvar_overlap_v = tonumber(GetCVarDefault('nameplateOverlapV')),
+    cvar_clamp_top = 0.08,
+	cvar_clamp_bottom = 0.10,
+	cvar_self_clamp_top = 0.75,
+	cvar_self_clamp_bottom = 0.10,
+	cvar_overlap_v = 1.10,
+	cvar_occluded_mult = 0.40,
     cvar_disable_scale = true,
     cvar_disable_alpha = true,
     cvar_self_alpha = 1,
-    cvar_occluded_mult = tonumber(GetCVarDefault('nameplateOccludedAlphaMult')),
 
     -- XXX legacy aura variables; kept for transition
     -- transition logic: p=px*py;x=ox;y=oy.
@@ -314,7 +326,7 @@ function core:Scale(v)
 end
 -- local functions #############################################################
 local function UpdateClickboxSize()
-    if kui.CLASSIC then return end -- XXX functions exist, but break display
+    if kui.CLASSIC then return end
     local x_pad = core:Scale(core.profile.frame_padding_x)
     local y_pad = core:Scale(core.profile.frame_padding_y)
 
@@ -322,22 +334,27 @@ local function UpdateClickboxSize()
     local o_height = (core:Scale(core.profile.frame_height) * addon.uiscale) + y_pad
 
     if C_NamePlate.SetNamePlateOtherSize then
-        C_NamePlate.SetNamePlateOtherSize(o_width,o_height)
+        C_NamePlate.SetNamePlateOtherSize(o_width, o_height)
     else
-        C_NamePlate.SetNamePlateFriendlySize(o_width,o_height)
-        C_NamePlate.SetNamePlateEnemySize(o_width,o_height)
+        if C_NamePlate.SetNamePlateFriendlySize then
+            C_NamePlate.SetNamePlateFriendlySize(o_width, o_height)
+        end
+        if C_NamePlate.SetNamePlateEnemySize then
+            C_NamePlate.SetNamePlateEnemySize(o_width, o_height)
+        end
     end
 
-    if addon.USE_BLIZZARD_PERSONAL then
-        -- obey width, use static height
-        C_NamePlate.SetNamePlateSelfSize(
-            core.profile.frame_width_personal - x_pad,
-            45
-        )
-    else
-        local p_width = (core:Scale(core.profile.frame_width_personal) * addon.uiscale) + x_pad
-        local p_height = (core:Scale(core.profile.frame_height_personal) * addon.uiscale) + y_pad
-        C_NamePlate.SetNamePlateSelfSize(p_width,p_height)
+    if C_NamePlate.SetNamePlateSelfSize then
+        if addon.USE_BLIZZARD_PERSONAL then
+            C_NamePlate.SetNamePlateSelfSize(
+                core.profile.frame_width_personal - x_pad,
+                45
+            )
+        else
+            local p_width = (core:Scale(core.profile.frame_width_personal) * addon.uiscale) + x_pad
+            local p_height = (core:Scale(core.profile.frame_height_personal) * addon.uiscale) + y_pad
+            C_NamePlate.SetNamePlateSelfSize(p_width, p_height)
+        end
     end
 end
 local function QueueClickboxUpdate()
@@ -708,9 +725,17 @@ function configChanged.ignore_uiscale(v)
 end
 
 local function ClickthroughUpdate()
-    C_NamePlate.SetNamePlateSelfClickThrough(core.profile.clickthrough_self)
-    C_NamePlate.SetNamePlateFriendlyClickThrough(core.profile.clickthrough_friend)
-    C_NamePlate.SetNamePlateEnemyClickThrough(core.profile.clickthrough_enemy)
+    if C_NamePlate.SetNamePlateSelfClickThrough then
+        C_NamePlate.SetNamePlateSelfClickThrough(core.profile.clickthrough_self)
+    end
+
+    if C_NamePlate.SetNamePlateFriendlyClickThrough then
+        C_NamePlate.SetNamePlateFriendlyClickThrough(core.profile.clickthrough_friend)
+    end
+
+    if C_NamePlate.SetNamePlateEnemyClickThrough then
+        C_NamePlate.SetNamePlateEnemyClickThrough(core.profile.clickthrough_enemy)
+    end
 end
 local function QueueClickthroughUpdate()
     cc:QueueFunction(ClickthroughUpdate)
@@ -965,11 +990,11 @@ function core:ConfigChanged(_,k,v)
 end
 function core:InitialiseConfig()
     --luacheck:globals KuiNameplatesCoreSaved KuiNameplatesCoreConfig
-    --@alpha@
+    --[=[@alpha@
     if not KuiNameplatesCoreSaved or not KuiNameplatesCoreSaved.SHUT_UP then
         addon:ui_print('Alpha version - Report issues to github.com/kesava-wow/kuinameplates2 and include the output of: /knp dump -- Thanks!')
     end
-    --@end-alpha@
+    --@end-alpha@]=]
 
     if KuiNameplatesCoreSaved then
         -- XXX TEMP 2.27

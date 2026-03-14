@@ -9,11 +9,10 @@
 --------------------------------------------------------------------------------
 local addon = KuiNameplates
 
-KuiNameplatesCore = addon:Layout()
+KuiNameplatesCore = KuiNameplatesCore or addon:Layout()
 local core = KuiNameplatesCore
 
 if not core then
-    -- another layout is already loaded
     return
 end
 
@@ -352,7 +351,12 @@ end
 function core:Initialise()
     plugin_fading = addon:GetPlugin('Fading')
 
+if self.InitialiseConfig then
     self:InitialiseConfig()
+else
+    print("KNP missing InitialiseConfig on core")
+    return
+end
 
     -- register messages
     self:RegisterMessage('Create')
