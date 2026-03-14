@@ -139,19 +139,11 @@ f.cast_state.name       = text or name
 f.cast_state.icon       = texture
 f.cast_state.guid       = guid
 
-local interruptible = true
-pcall(function()
-    -- classic can omit this, Midnight can protect it
-    interruptible = not (notInterruptible == true)
-end)
-f.cast_state.interruptible = interruptible
+-- Midnight can protect notInterruptible, so do not inspect it here.
+-- Default to true and let later cast events update the state if available.
+f.cast_state.interruptible = true
 
-local stages = false
-pcall(function()
-    stages = (numStages == true)
-end)
-f.cast_state.num_stages = stages
-
+f.cast_state.num_stages = false
 f.cast_state.empowered  = event == 'UNIT_SPELLCAST_EMPOWER_START'
 f.cast_state.channel    = event == 'UNIT_SPELLCAST_CHANNEL_START'
 f.cast_state.start_time = startTime / 1000
