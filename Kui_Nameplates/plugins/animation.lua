@@ -164,48 +164,23 @@ do
     }
 end
 -- prototype additions #########################################################
-function addon.Nameplate.SetBarAnimation(f,bar,anim_id)
+function addon.Nameplate.SetBarAnimation(f, bar, anim_id)
     if not bar then return end
     f = f.parent
 
-    if bar.animation and anims[bar.animation] then
-        -- disable current animation
-        anims[bar.animation].disable(bar)
-    end
-
-    if anim_id and anims[anim_id] then
-        anims[anim_id].set(bar)
-    else
-        -- no animation; remove from animated bars
-        if f.animated_bars and #f.animated_bars > 0 then
-            for i,a_bar in ipairs(f.animated_bars) do
-                if bar == a_bar then
-                    tremove(f.animated_bars,i)
-                end
+    if f and f.animated_bars then
+        for i = #f.animated_bars, 1, -1 do
+            if f.animated_bars[i] == bar then
+                table.remove(f.animated_bars, i)
             end
         end
-
-        return
     end
 
-    if not f.animated_bars then
-        f.animated_bars = {}
-    end
-
-    if not bar.animation then
-        tinsert(f.animated_bars, bar)
-    end
-
-    bar.animation = anim_id
+    bar.animation = nil
 end
 -- messages ####################################################################
 function mod:Hide(f)
-    -- clear animations
-    if type(f.animated_bars) == 'table' then
-        for _,bar in ipairs(f.animated_bars) do
-            anims[bar.animation].clear(bar)
-        end
-    end
+    -- no custom animations in Midnight
 end
 -- register ####################################################################
 function mod:OnEnable()
