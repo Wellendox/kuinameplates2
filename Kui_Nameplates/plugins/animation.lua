@@ -10,37 +10,43 @@ local GetFramerate = GetFramerate
 -- local functions #############################################################
 -- cutaway #####################################################################
 do
-    local function SetValueCutaway(self,value)
+    local function SetValueCutaway(self, value)
         if not self:IsVisible() then
             -- passthrough initial calls
             self:orig_anim_SetValue(value)
             return
         end
 
-        if value < self:GetValue() then
-            if not kui.frameIsFading(self.KuiFader) then
-                self.KuiFader:SetPoint(
-                    'RIGHT', self, 'LEFT',
-                    (self:GetValue() / select(2,self:GetMinMaxValues())) * self:GetWidth(), 0
-                )
+        local ok = pcall(function()
+            if value < self:GetValue() then
+                if not kui.frameIsFading(self.KuiFader) then
+                    self.KuiFader:SetPoint(
+                        'RIGHT', self, 'LEFT',
+                        (self:GetValue() / select(2, self:GetMinMaxValues())) * self:GetWidth(), 0
+                    )
 
-                -- store original rightmost value
-                self.KuiFader.right = self:GetValue()
+                    -- store original rightmost value
+                    self.KuiFader.right = self:GetValue()
 
-                kui.frameFade(self.KuiFader, {
-                    mode = 'OUT',
-                    timeToFade = .2
-                })
+                    kui.frameFade(self.KuiFader, {
+                        mode = 'OUT',
+                        timeToFade = .2
+                    })
+                end
             end
-        end
 
-        if self.KuiFader.right and value > self.KuiFader.right then
-            -- stop animation if new value overlaps old end point
+            if self.KuiFader.right and value > self.KuiFader.right then
+                kui.frameFadeRemoveFrame(self.KuiFader)
+                self.KuiFader:SetAlpha(0)
+            end
+        end)
+
+        self:orig_anim_SetValue(value)
+
+        if not ok and self.KuiFader then
             kui.frameFadeRemoveFrame(self.KuiFader)
             self.KuiFader:SetAlpha(0)
         end
-
-        self:orig_anim_SetValue(value)
     end
     local function SetStatusBarColor(self,...)
         self:orig_anim_SetStatusBarColor(...)
@@ -109,30 +115,48 @@ do
         end
     end
 
-    local function SetValueSmooth(self,value)
+    local function SetValueSmooth(self, value)
         if not self:IsVisible() then
             self:orig_anim_SetValue(value)
             return
         end
 
-        if value == self:GetValue() then
+        local ok, same = pcall(function()
+            return value == self:GetValue()
+        end)
+
+        if not ok then
+            ClearBar(self)
+            self:orig_anim_SetValue(value)
+            return
+        end
+
+        if same then
             ClearBar(self)
             self:orig_anim_SetValue(value)
         else
-            SmoothBar(self,value)
+            SmoothBar(self, value)
         end
     end
     local function SmootherOnUpdate()
-        local limit = 30/GetFramerate()
-        for bar,value in pairs(smoothing) do
-            local cur = bar:GetValue()
-            local new = cur + min((value-cur)/3, max(value-cur, limit))
+        local limit = 30 / GetFramerate()
 
-            if cur == value or abs(new-value) < .005 then
+        for bar, value in pairs(smoothing) do
+            local ok = pcall(function()
+                local cur = bar:GetValue()
+                local new = cur + min((value - cur) / 3, max(value - cur, limit))
+
+                if cur == value or abs(new - value) < .005 then
+                    bar:orig_anim_SetValue(value)
+                    ClearBar(bar)
+                else
+                    bar:orig_anim_SetValue(new)
+                end
+            end)
+
+            if not ok then
                 bar:orig_anim_SetValue(value)
                 ClearBar(bar)
-            else
-                bar:orig_anim_SetValue(new)
             end
         end
     end
