@@ -284,6 +284,7 @@ local default_config = {
     cvar_disable_scale = true,
     cvar_disable_alpha = true,
     cvar_self_alpha = 1,
+    cvar_occluded_mult = SafeCVarNumber('nameplateOccludedAlphaMult', 0.4),
 
     -- XXX legacy aura variables; kept for transition
     -- transition logic: p=px*py;x=ox;y=oy.
@@ -326,7 +327,7 @@ function core:Scale(v)
 end
 -- local functions #############################################################
 local function UpdateClickboxSize()
-    if kui.CLASSIC then return end
+    if kui.CLASSIC then return end -- XXX functions exist, but break display
     local x_pad = core:Scale(core.profile.frame_padding_x)
     local y_pad = core:Scale(core.profile.frame_padding_y)
 
