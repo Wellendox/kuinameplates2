@@ -40,8 +40,8 @@ local DEFAULT_BAR = 'Kui status bar'
 -- default configuration #######################################################
 local default_config = {
     bar_texture = DEFAULT_BAR,
-    bar_animation = 0,
-    bar_spark = false, -- NEX XXX requires reload
+    bar_animation = 3,
+    bar_spark = true, -- NEX XXX requires reload
     combat_hostile = 1,
     combat_friendly = 1,
     ignore_uiscale = false,
@@ -276,11 +276,11 @@ local default_config = {
     cvar_personal_show_combat = GetCVarDefault('nameplatePersonalShowInCombat')=="1",
     cvar_personal_show_target = GetCVarDefault('nameplatePersonalShowWithTarget')=="1",
     cvar_clamp_top = 0.08,
-	cvar_clamp_bottom = 0.10,
-	cvar_self_clamp_top = 0.75,
-	cvar_self_clamp_bottom = 0.10,
-	cvar_overlap_v = 1.10,
-	cvar_occluded_mult = 0.40,
+    cvar_clamp_bottom = 0.10,
+    cvar_self_clamp_top = 0.75,
+    cvar_self_clamp_bottom = 0.10,
+    cvar_overlap_v = 1.10,
+    cvar_occluded_mult = 0.40,
     cvar_disable_scale = true,
     cvar_disable_alpha = true,
     cvar_self_alpha = 1,
@@ -990,11 +990,11 @@ function core:ConfigChanged(_,k,v)
 end
 function core:InitialiseConfig()
     --luacheck:globals KuiNameplatesCoreSaved KuiNameplatesCoreConfig
-    --[=[@alpha@
+    --@alpha@
     if not KuiNameplatesCoreSaved or not KuiNameplatesCoreSaved.SHUT_UP then
         addon:ui_print('Alpha version - Report issues to github.com/kesava-wow/kuinameplates2 and include the output of: /knp dump -- Thanks!')
     end
-    --@end-alpha@]=]
+    --@end-alpha@
 
     if KuiNameplatesCoreSaved then
         -- XXX TEMP 2.27

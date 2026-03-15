@@ -134,20 +134,20 @@ function ele:CastStart(event,f,unit)
     end
     if not name then return end
 
-f.state.casting         = true
-f.cast_state.name       = text or name
-f.cast_state.icon       = texture
-f.cast_state.guid       = guid
+    f.state.casting         = true
+    f.cast_state.name       = text or name
+    f.cast_state.icon       = texture
+    f.cast_state.guid       = guid
 
--- Midnight can protect notInterruptible, so do not inspect it here.
--- Default to true and let later cast events update the state if available.
-f.cast_state.interruptible = true
+    -- Midnight can protect cast metadata, so do not inspect it here.
+    -- These are updated later by cast events where available.
+    f.cast_state.interruptible = true
+    f.cast_state.num_stages    = false
 
-f.cast_state.num_stages = false
-f.cast_state.empowered  = event == 'UNIT_SPELLCAST_EMPOWER_START'
-f.cast_state.channel    = event == 'UNIT_SPELLCAST_CHANNEL_START'
-f.cast_state.start_time = startTime / 1000
-f.cast_state.end_time   = endTime / 1000
+    f.cast_state.empowered  = event == 'UNIT_SPELLCAST_EMPOWER_START'
+    f.cast_state.channel    = event == 'UNIT_SPELLCAST_CHANNEL_START'
+    f.cast_state.start_time = startTime / 1000
+    f.cast_state.end_time   = endTime / 1000
 
     f.handler:CastBarShow()
 end

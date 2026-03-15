@@ -13,6 +13,7 @@ KuiNameplatesCore = KuiNameplatesCore or addon:Layout()
 local core = KuiNameplatesCore
 
 if not core then
+    -- another layout is already loaded
     return
 end
 
